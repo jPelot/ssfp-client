@@ -363,5 +363,5 @@ SSFP_Client_request_add_option(SSFP_Form form, int element_index, const char* op
 char*
 SSFP_Client_request_generate(SSFP_Form formm)
 {
-  
+  return "";  
 }
