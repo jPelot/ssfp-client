@@ -16,7 +16,6 @@ Parser_create(char *str)
 {
   Parser p;
   char *line, *index;
-  int len;
   
   p = malloc(sizeof(struct parser_handle_t));
   p->lines = StrArray_create();
@@ -55,7 +54,6 @@ char*
 Parser_field(Parser p, int index, int include_rest)
 {
   char *temp, *ptr, *out, *base;
-  const char *field;
 
   temp = malloc(strlen(Parser_line(p))+1);
   strcpy(temp, Parser_line(p));
