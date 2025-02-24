@@ -44,9 +44,9 @@ int          SSFP_Form_element_num_options(SSFP_Form, int element_idnex);
 StrArray     SSFP_Form_element_option_names(SSFP_Form, int element_index);
 StrArray     SSFP_Form_element_option_ids(SSFP_Form, int element_index);
 
-void SSFP_Client_request_start(SSFP_Form, int form_index);
-void SSFP_Client_request_add_text(SSFP_Form, int element_index, const char* str);
-void SSFP_Client_request_add_option(SSFP_Form, int element_index, const char* element_id);
-char* SSFP_Client_request_generate(SSFP_Form);
+void SSFP_Client_request_start(SSFP_Client, int form_index, char *submit_id);
+void SSFP_Client_request_add_text(SSFP_Client, int element_index, const char* str);
+void SSFP_Client_request_add_option(SSFP_Client, int element_index, const char* element_id);
+char* SSFP_Client_request_generate(SSFP_Client, char *submit_id);
 
 #endif // SSFP_CLIENT_H

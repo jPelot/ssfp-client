@@ -7,6 +7,12 @@
 #include "parser.h"
 
 
+struct ssfp_response {
+  SSFP_Form form;
+  StrArray data; 
+  char *submit;
+};
+
 struct ssfp_client_form {
   char *id;
   char *name;
@@ -33,6 +39,7 @@ struct ssfp_client_handle {
   SSFP_Form *forms;
   IntArray types;
   StrArray messages;
+  struct ssfp_response response;
 };
 
 SSFP_Form SSFP_Form_create();
@@ -148,7 +155,7 @@ parse_line(SSFP_Client client, Parser p)
   if (dir_type == SSFP_STATUS) {
     IntArray_add(client->types, SSFP_STATUS);
     StrArray_add(client->messages, Parser_line(p)+1);
-    return 0;
+    return 0; // Finish Successfully
   }
 
   if (dir_type == SSFP_FORM) {
@@ -157,15 +164,18 @@ parse_line(SSFP_Client client, Parser p)
     IntArray_add(client->types, SSFP_FORM);
     form->id = Parser_field(p, 0, 0) + 1;
     form->name = Parser_field(p, 1, 1);
-    return 0;
+    return 0; // Finish Successfully
   }
 
+  // Assume line is a form element after this point
+  
   if (client->num_forms == 0) {
-    return 1;
+    return 1; // if no form has been encountered yet, error state
   }
 
+  // Get current form struct
   form = client->forms[client->num_forms - 1];
-
+  // Error if any three of these fields don't exist
   if ((type = Parser_field(p,0,0)) == NULL) return 1;
   if ((id   = Parser_field(p,1,0)) == NULL) return 1;
   if ((name = Parser_field(p,2,1)) == NULL) return 1;
@@ -343,25 +353,56 @@ SSFP_Form_element_option_names(SSFP_Form form, int element_index)
 }
 
 void
-SSFP_Client_request_start(SSFP_Form form, int form_index)
+SSFP_Client_request_start(SSFP_Client client, int form_index, char *submit_id)
 {
-    
+  client->response.data = StrArray_create();
+  if (form_index < 0 || form_index > client->num_forms) {
+    return;
+  }
+  client->response.form = client->forms[form_index];
+  client->response.submit = malloc(sizeof(submit_id)+1);
 }
 
 void
-SSFP_Client_request_add_text(SSFP_Form form, int element_index, const char* str)
+SSFP_Client_request_add_text(SSFP_Client client, int element_index, const char* str)
 {
-  
+   StrArray_add(client->response.data, str);
 }
 
 void
-SSFP_Client_request_add_option(SSFP_Form form, int element_index, const char* option_id)
+SSFP_Client_request_add_option(SSFP_Client client, int element_index, const char* option_id)
 {
   
 }
 
 char*
-SSFP_Client_request_generate(SSFP_Form formm)
+SSFP_Client_request_generate(SSFP_Client client, char *submit_id)
 {
-  return "";  
+  if (client->response.form == NULL) {
+    return " \r\n \r\n";
+  }
+
+  StrArray out = StrArray_create();
+  SSFP_Form form = client->response.form;
+
+  StrArray_add(out, " \r\n \r\n");
+  StrArray_add(out, form->id);
+  StrArray_add(out, "\r\n");
+  StrArray_add(out, submit_id);
+  StrArray_add(out, "\r\n");
+
+  for (int i = 0; i < StrArray_length(form->element_ids); i++) {
+    switch(IntArray_get(form->element_types, i)) {
+    case SSFP_AREA:
+    case SSFP_FIELD:
+      StrArray_add(out, StrArray_get(form->element_ids, i));
+      StrArray_add(out, "\n");
+      StrArray_add(out, StrArray_get(form->element_texts, i));
+      StrArray_add(out, "\r\n");
+      break;
+    default:
+      break; 
+    }
+  }
+  return StrArray_combine(out);
 }
